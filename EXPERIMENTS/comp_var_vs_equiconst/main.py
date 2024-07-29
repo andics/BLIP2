@@ -64,11 +64,11 @@ def visualize_and_save(qa_item, full_img_path, var_img_path, uni_img_path, full_
     question = qa_item['question']
     choices = [qa_item['choice_a'], qa_item['choice_b'], qa_item['choice_c'], qa_item['choice_d']]
     gt = qa_item['answer']
-    
+
     full_img = mpimg.imread(full_img_path)
     var_img = mpimg.imread(var_img_path)
     uni_img = mpimg.imread(uni_img_path)
-    
+
     full_pred_text = choices[ord(full_pred) - ord('A')]
     var_pred_text = choices[ord(var_pred) - ord('A')]
     uni_pred_text = choices[ord(uni_pred) - ord('A')]
@@ -95,7 +95,7 @@ def visualize_and_save(qa_item, full_img_path, var_img_path, uni_img_path, full_
     plt.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
 
-def run_inference(model, qa_anno, output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir, device):
+def run_inference(model, qa_anno, output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir):
     total_qa_num = len(qa_anno)
     answer_list = []
 
@@ -160,24 +160,11 @@ def run_inference(model, qa_anno, output_dir, full_cc3m_dir, variable_cc3m_dir, 
             data_info['var_data_path'] = var_data_path
             data_info['uni_data_path'] = uni_data_path
 
-            # Load and move images to device
-            full_image = torch.tensor(np.array(mpimg.imread(full_data_path))).to(device)
-            var_image = torch.tensor(np.array(mpimg.imread(var_data_path))).to(device)
-            uni_image = torch.tensor(np.array(mpimg.imread(uni_data_path))).to(device)
-
-            # Prepare data info for model
-            model_data_info = {
-                **data_info,
-                'full_image': full_image,
-                'var_image': var_image,
-                'uni_image': uni_image
-            }
-
             # Losses: loss values of 4 choices, torch tensor, shape=[4]
             with torch.no_grad():
-                full_losses = model({**data_info, 'data_path': full_data_path}).to(device)
-                var_losses = model({**data_info, 'data_path': var_data_path}).to(device)
-                uni_losses = model({**data_info, 'data_path': uni_data_path}).to(device)
+                full_losses = model({**data_info, 'data_path': full_data_path})
+                var_losses = model({**data_info, 'data_path': var_data_path})
+                uni_losses = model({**data_info, 'data_path': uni_data_path})
             full_class_ranks = torch.argsort(full_losses, dim=-1).cpu()
             var_class_ranks = torch.argsort(var_losses, dim=-1).cpu()
             uni_class_ranks = torch.argsort(uni_losses, dim=-1).cpu()
@@ -196,12 +183,12 @@ def run_inference(model, qa_anno, output_dir, full_cc3m_dir, variable_cc3m_dir, 
             answer_list.append(answer_record)
             # Output prediction record for each question
             output_f.write(json.dumps(answer_record) + "\n")
-            
+
             # Determine permutation folder and save visualization
             for perm in permutations:
                 if perm[1](full_pred_id, var_pred_id, uni_pred_id, gt):
                     visualize_and_save(qa_item, full_data_path, var_data_path, uni_data_path, full_pred_id, var_pred_id, uni_pred_id, output_dir, perm[0])
-            
+
             step += 1
 
         print("evaluation finished! Calculating accuracy...")
@@ -249,16 +236,16 @@ def run_inference(model, qa_anno, output_dir, full_cc3m_dir, variable_cc3m_dir, 
     total_uni_accuracy = total_uni_correct / total_count * 100
     print(f"Total accuracy: Full Res {total_full_accuracy:.2f}%, Variable Res {total_var_accuracy:.2f}%, Uniform Res {total_uni_accuracy:.2f}%")
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='blip2')
     parser.add_argument('--anno_path', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/SEED-Bench.json')
     parser.add_argument('--output_dir', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/visualizations_27d')
     parser.add_argument('--task', type=str, default='all')
-    parser.add_argument('--gpu', type=int, default=1, help='GPU device ID')
     args = parser.parse_args()
-    
+
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(1)
+
     qa_anno = json.load(open(args.anno_path, 'rb'))
     if 'questions' in qa_anno.keys():
         qa_anno = qa_anno['questions']
@@ -268,8 +255,7 @@ if __name__ == '__main__':
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
 
-    print(f'evaluating.. {args.model} on GPU {args.gpu}')
+    print(f'evaluating.. {args.model}')
     # The interface for testing MLLMs
-    device = torch.device(f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu')
-    model = build_model(args.model).to(device)
-    run_inference(model, qa_anno, args.output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir, device)
+    model = build_model(args.model).cuda()
+    run_inference(model, qa_anno, args.output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir)
