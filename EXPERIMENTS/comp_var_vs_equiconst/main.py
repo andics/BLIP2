@@ -91,7 +91,8 @@ def visualize_and_save(qa_item, full_img_path, var_img_path, uni_img_path, full_
 
     image_id = qa_item['data_id']
     question_id = qa_item['question_id']
-    output_path = os.path.join(output_dir, perm, f"{image_id}_{question_id}.png")
+    question_type_id = qa_item['question_type_id']
+    output_path = os.path.join(output_dir, perm, f"{image_id}_{question_id}_{question_type_id}.png")
     plt.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
 
