@@ -206,9 +206,9 @@ def run_inference(model, qa_anno, output_dir, variable_cc3m_dir, uniform_cc3m_di
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arg Parser')
-    parser.add_argument('--model', type=str, default='instruct_blip')
-    parser.add_argument('--anno_path', type=str, default='SEED-Bench.json')
-    parser.add_argument('--output_dir', type=str, default='results')
+    parser.add_argument('--model', type=str, default='blip2')
+    parser.add_argument('--anno_path', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/SEED-Bench.json')
+    parser.add_argument('--output_dir', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/visualizations')
     parser.add_argument('--task', type=str, default='all')
     args = parser.parse_args()
     

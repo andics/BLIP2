@@ -192,4 +192,3 @@ if __name__ == '__main__':
     # The interface for testing MLLMs
     model = build_model(args.model).cuda()
     run_inference(model, qa_anno, args.output_dir)
-
