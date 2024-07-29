@@ -67,18 +67,24 @@ def visualize_and_save(qa_item, var_img_path, uni_img_path, var_pred, uni_pred, 
     
     var_img = mpimg.imread(var_img_path)
     uni_img = mpimg.imread(uni_img_path)
+    
+    var_pred_text = choices[ord(var_pred) - ord('A')]
+    uni_pred_text = choices[ord(uni_pred) - ord('A')]
+    gt_text = choices[ord(gt) - ord('A')]
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 5))
-    fig.suptitle(question, fontsize=16)
+    fig, axes = plt.subplots(1, 2, figsize=(10, 7))
+    fig.suptitle(question, fontsize=16, y=0.95)
     axes[0].imshow(var_img)
-    axes[0].set_title(f"Variable Res\nPrediction: {var_pred}\nGT: {gt}")
+    axes[0].set_title("Variable", fontsize=14)
     axes[0].axis('off')
+    axes[0].text(0.5, -0.15, f"Prediction: {var_pred} ({var_pred_text})\nGT: {gt} ({gt_text})", ha='center', va='top', transform=axes[0].transAxes, fontsize=12)
     axes[1].imshow(uni_img)
-    axes[1].set_title(f"Uniform Res\nPrediction: {uni_pred}\nGT: {gt}")
+    axes[1].set_title("Uniform", fontsize=14)
     axes[1].axis('off')
+    axes[1].text(0.5, -0.15, f"Prediction: {uni_pred} ({uni_pred_text})\nGT: {gt} ({gt_text})", ha='center', va='top', transform=axes[1].transAxes, fontsize=12)
 
     output_path = os.path.join(output_dir, f"{qa_item['question_id']}.png")
-    plt.savefig(output_path)
+    plt.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
 
 def run_inference(model, qa_anno, output_dir, variable_cc3m_dir, uniform_cc3m_dir):
@@ -136,8 +142,8 @@ def run_inference(model, qa_anno, output_dir, variable_cc3m_dir, uniform_cc3m_di
                 'question_id': qa_item['question_id'],
                 'var_prediction': var_pred_id,
                 'uni_prediction': uni_pred_id,
-                'q_type_id': qa_item['question_type_id'],  # added by DH
-                'gt': qa_item['answer']  # added by DH
+                'q_type_id': qa_item['question_type_id'],
+                'gt': qa_item['answer']
             }
             answer_list.append(answer_record)
             # Output prediction record for each question
