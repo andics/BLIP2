@@ -242,9 +242,10 @@ if __name__ == '__main__':
     parser.add_argument('--anno_path', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/SEED-Bench.json')
     parser.add_argument('--output_dir', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/visualizations_27d')
     parser.add_argument('--task', type=str, default='all')
+    parser.add_argument('--gpu', type=int, default=0, help='GPU device ID')
     args = parser.parse_args()
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = str(1)
+    os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 
     qa_anno = json.load(open(args.anno_path, 'rb'))
     if 'questions' in qa_anno.keys():
