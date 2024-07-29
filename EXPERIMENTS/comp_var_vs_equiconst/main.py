@@ -12,8 +12,8 @@ import matplotlib.image as mpimg
 
 # root directories for the three versions of SEED-Bench dataset
 full_cc3m_dir = "/home/projects/bagon/shared/SEED-Bench/SEED-Bench-image"
-variable_cc3m_dir = "/home/projects/bagon/dannyh/data/seedbench_filt/Variable_27d"
-uniform_cc3m_dir = "/home/projects/bagon/dannyh/data/seedbench_filt/Constant_27d"
+variable_cc3m_dir = "/home/projects/bagon/dannyh/data/seedbench_filt/Variable_10d"
+uniform_cc3m_dir = "/home/projects/bagon/dannyh/data/seedbench_filt/Constant_10d"
 dimension10_dir = "/home/projects/bagon/shared/20bn-something-something-v2/videos"
 dimension11_dir = "/YOUR_PATH_TO/EPIC-KITCHENS/3h91syskeag572hl6tvuovwv4d/videos/test"
 dimension12_dir = "/YOUR_PATH_TO/BreakfastII_15fps_qvga_sync"
@@ -95,7 +95,7 @@ def visualize_and_save(qa_item, full_img_path, var_img_path, uni_img_path, full_
     plt.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
 
-def run_inference(model, qa_anno, output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir):
+def run_inference(model, qa_anno, output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir, device):
     total_qa_num = len(qa_anno)
     answer_list = []
 
@@ -159,6 +159,9 @@ def run_inference(model, qa_anno, output_dir, full_cc3m_dir, variable_cc3m_dir, 
             data_info['full_data_path'] = full_data_path
             data_info['var_data_path'] = var_data_path
             data_info['uni_data_path'] = uni_data_path
+
+            # Move data info to the specified device
+            data_info = {k: v.to(device) if isinstance(v, torch.Tensor) else v for k, v in data_info.items()}
 
             # Losses: loss values of 4 choices, torch tensor, shape=[4]
             with torch.no_grad():
@@ -240,9 +243,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='blip2')
     parser.add_argument('--anno_path', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/SEED-Bench.json')
-    parser.add_argument('--output_dir', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/visualizations_27d')
+    parser.add_argument('--output_dir', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/visualizations')
     parser.add_argument('--task', type=str, default='all')
-    parser.add_argument('--gpu', type=int, default=1, help='GPU device ID')
+    parser.add_argument('--gpu', type=int, default=0, help='GPU device ID')
     args = parser.parse_args()
     
     qa_anno = json.load(open(args.anno_path, 'rb'))
@@ -258,4 +261,4 @@ if __name__ == '__main__':
     # The interface for testing MLLMs
     device = torch.device(f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu')
     model = build_model(args.model).to(device)
-    run_inference(model, qa_anno, args.output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir)
+    run_inference(model, qa_anno, args.output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir, device)
