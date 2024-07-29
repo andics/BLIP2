@@ -10,13 +10,13 @@ import glob
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 
-# root directories for the two versions of SEED-Bench dataset
+# root directories for the three versions of SEED-Bench dataset
+full_cc3m_dir = "/home/projects/bagon/shared/SEED-Bench/SEED-Bench-image"
 variable_cc3m_dir = "/home/projects/bagon/dannyh/data/seedbench_filt/Variable_10d"
 uniform_cc3m_dir = "/home/projects/bagon/dannyh/data/seedbench_filt/Constant_10d"
 dimension10_dir = "/home/projects/bagon/shared/20bn-something-something-v2/videos"
-# Update these paths as necessary
-# dimension11_dir = "/YOUR_PATH_TO/EPIC-KITCHENS/3h91syskeag572hl6tvuovwv4d/videos/test"
-# dimension12_dir = "/YOUR_PATH_TO/BreakfastII_15fps_qvga_sync"
+dimension11_dir = "/YOUR_PATH_TO/EPIC-KITCHENS/3h91syskeag572hl6tvuovwv4d/videos/test"
+dimension12_dir = "/YOUR_PATH_TO/BreakfastII_15fps_qvga_sync"
 
 seed = 0
 
@@ -60,34 +60,40 @@ def build_model(model_name):
 
     return model
 
-def visualize_and_save(qa_item, var_img_path, uni_img_path, var_pred, uni_pred, output_dir):
+def visualize_and_save(qa_item, full_img_path, var_img_path, uni_img_path, full_pred, var_pred, uni_pred, output_dir):
     question = qa_item['question']
     choices = [qa_item['choice_a'], qa_item['choice_b'], qa_item['choice_c'], qa_item['choice_d']]
     gt = qa_item['answer']
     
+    full_img = mpimg.imread(full_img_path)
     var_img = mpimg.imread(var_img_path)
     uni_img = mpimg.imread(uni_img_path)
     
+    full_pred_text = choices[ord(full_pred) - ord('A')]
     var_pred_text = choices[ord(var_pred) - ord('A')]
     uni_pred_text = choices[ord(uni_pred) - ord('A')]
     gt_text = choices[ord(gt) - ord('A')]
 
-    fig, axes = plt.subplots(1, 2, figsize=(10, 7))
+    fig, axes = plt.subplots(1, 3, figsize=(15, 7))
     fig.suptitle(question, fontsize=16, y=0.95)
-    axes[0].imshow(var_img)
-    axes[0].set_title("Variable", fontsize=14)
+    axes[0].imshow(full_img)
+    axes[0].set_title("Full", fontsize=14)
     axes[0].axis('off')
-    axes[0].text(0.5, -0.15, f"Prediction: {var_pred} ({var_pred_text})\nGT: {gt} ({gt_text})", ha='center', va='top', transform=axes[0].transAxes, fontsize=12)
-    axes[1].imshow(uni_img)
-    axes[1].set_title("Uniform", fontsize=14)
+    axes[0].text(0.5, -0.15, f"Prediction: {full_pred} ({full_pred_text})\nGT: {gt} ({gt_text})", ha='center', va='top', transform=axes[0].transAxes, fontsize=12)
+    axes[1].imshow(var_img)
+    axes[1].set_title("Variable", fontsize=14)
     axes[1].axis('off')
-    axes[1].text(0.5, -0.15, f"Prediction: {uni_pred} ({uni_pred_text})\nGT: {gt} ({gt_text})", ha='center', va='top', transform=axes[1].transAxes, fontsize=12)
+    axes[1].text(0.5, -0.15, f"Prediction: {var_pred} ({var_pred_text})\nGT: {gt} ({gt_text})", ha='center', va='top', transform=axes[1].transAxes, fontsize=12)
+    axes[2].imshow(uni_img)
+    axes[2].set_title("Uniform", fontsize=14)
+    axes[2].axis('off')
+    axes[2].text(0.5, -0.15, f"Prediction: {uni_pred} ({uni_pred_text})\nGT: {gt} ({gt_text})", ha='center', va='top', transform=axes[2].transAxes, fontsize=12)
 
     output_path = os.path.join(output_dir, f"{qa_item['question_id']}.png")
     plt.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
 
-def run_inference(model, qa_anno, output_dir, variable_cc3m_dir, uniform_cc3m_dir):
+def run_inference(model, qa_anno, output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir):
     total_qa_num = len(qa_anno)
     answer_list = []
     if not os.path.exists(os.path.join(output_dir, "results.json")):
@@ -102,44 +108,54 @@ def run_inference(model, qa_anno, output_dir, variable_cc3m_dir, uniform_cc3m_di
             }
 
             if qa_item['data_type'] == 'image':
+                full_data_path = os.path.join(full_cc3m_dir, qa_item['data_id'])
                 var_data_path = os.path.join(variable_cc3m_dir, qa_item['data_id'])
                 uni_data_path = os.path.join(uniform_cc3m_dir, qa_item['data_id'])
                 try:
+                    full_data_path = glob.glob(full_data_path[:-4]+'*')[0]
                     var_data_path = glob.glob(var_data_path[:-4]+'*')[0]
                     uni_data_path = glob.glob(uni_data_path[:-4]+'*')[0]
                 except:
-                    print('missing file: ' + var_data_path + ' or ' + uni_data_path)
+                    print('missing file: ' + full_data_path + ' or ' + var_data_path + ' or ' + uni_data_path)
                     continue
             elif qa_item['data_type'] == 'video':
                 if qa_item['question_type_id'] == 10:
-                    var_data_path = os.path.join(dimension10_dir, qa_item['data_id'])
-                    uni_data_path = var_data_path
+                    full_data_path = os.path.join(dimension10_dir, qa_item['data_id'])
+                    var_data_path = full_data_path
+                    uni_data_path = full_data_path
                 elif qa_item['question_type_id'] == 11:
-                    var_data_path = os.path.join(dimension11_dir, qa_item['data_id'])
-                    uni_data_path = var_data_path
+                    full_data_path = os.path.join(dimension11_dir, qa_item['data_id'])
+                    var_data_path = full_data_path
+                    uni_data_path = full_data_path
                     data_info['segment'] = qa_item['segment']
                 elif qa_item['question_type_id'] == 12:
-                    var_data_path = os.path.join(dimension12_dir, qa_item['data_id'])
-                    uni_data_path = var_data_path
+                    full_data_path = os.path.join(dimension12_dir, qa_item['data_id'])
+                    var_data_path = full_data_path
+                    uni_data_path = full_data_path
                     data_info['segment'] = qa_item['segment']
                 else:
                     raise ValueError("The question type id is not valid.")
             else:
                 raise ValueError("The data type is not valid.")
+            data_info['full_data_path'] = full_data_path
             data_info['var_data_path'] = var_data_path
             data_info['uni_data_path'] = uni_data_path
 
             # Losses: loss values of 4 choices, torch tensor, shape=[4]
             with torch.no_grad():
+                full_losses = model({**data_info, 'data_path': full_data_path})
                 var_losses = model({**data_info, 'data_path': var_data_path})
                 uni_losses = model({**data_info, 'data_path': uni_data_path})
+            full_class_ranks = torch.argsort(full_losses, dim=-1).cpu()
             var_class_ranks = torch.argsort(var_losses, dim=-1).cpu()
             uni_class_ranks = torch.argsort(uni_losses, dim=-1).cpu()
+            full_pred_id = ['A', 'B', 'C', 'D'][full_class_ranks[0]]
             var_pred_id = ['A', 'B', 'C', 'D'][var_class_ranks[0]]
             uni_pred_id = ['A', 'B', 'C', 'D'][uni_class_ranks[0]]
             gt = qa_item['answer']
             answer_record = {
                 'question_id': qa_item['question_id'],
+                'full_prediction': full_pred_id,
                 'var_prediction': var_pred_id,
                 'uni_prediction': uni_pred_id,
                 'q_type_id': qa_item['question_type_id'],
@@ -150,7 +166,7 @@ def run_inference(model, qa_anno, output_dir, variable_cc3m_dir, uniform_cc3m_di
             output_f.write(json.dumps(answer_record) + "\n")
             
             # Visualization
-            visualize_and_save(qa_item, var_data_path, uni_data_path, var_pred_id, uni_pred_id, output_dir)
+            visualize_and_save(qa_item, full_data_path, var_data_path, uni_data_path, full_pred_id, var_pred_id, uni_pred_id, output_dir)
             
             step += 1
 
@@ -168,9 +184,11 @@ def run_inference(model, qa_anno, output_dir, variable_cc3m_dir, uniform_cc3m_di
     correct_counts = {}
 
     for item in answer_list:
-        var_pred, uni_pred, gt, data_type = item['var_prediction'], item['uni_prediction'], item['gt'], item['q_type_id']
+        full_pred, var_pred, uni_pred, gt, data_type = item['full_prediction'], item['var_prediction'], item['uni_prediction'], item['gt'], item['q_type_id']
 
         type_counts[data_type] = type_counts.get(data_type, 0) + 1
+        if full_pred == gt:
+            correct_counts[(data_type, 'full')] = correct_counts.get((data_type, 'full'), 0) + 1
         if var_pred == gt:
             correct_counts[(data_type, 'var')] = correct_counts.get((data_type, 'var'), 0) + 1
         if uni_pred == gt:
@@ -178,37 +196,50 @@ def run_inference(model, qa_anno, output_dir, variable_cc3m_dir, uniform_cc3m_di
 
     print("Accuracy for each data type:")
     total_count = 0
+    total_full_correct = 0
     total_var_correct = 0
     total_uni_correct = 0
     for data_type in type_counts.keys():
+        full_accuracy = correct_counts.get((data_type, 'full'), 0) / type_counts[data_type] * 100
         var_accuracy = correct_counts.get((data_type, 'var'), 0) / type_counts[data_type] * 100
         uni_accuracy = correct_counts.get((data_type, 'uni'), 0) / type_counts[data_type] * 100
-        print(f"Data type {data_type}: Variable Res {var_accuracy:.2f}%, Uniform Res {uni_accuracy:.2f}%")
+        print(f"Data type {data_type}: Full Res {full_accuracy:.2f}%, Variable Res {var_accuracy:.2f}%, Uniform Res {uni_accuracy:.2f}%")
 
         total_count += type_counts[data_type]
+        total_full_correct += correct_counts.get((data_type, 'full'), 0)
         total_var_correct += correct_counts.get((data_type, 'var'), 0)
         total_uni_correct += correct_counts.get((data_type, 'uni'), 0)
 
+    total_full_accuracy = total_full_correct / total_count * 100
     total_var_accuracy = total_var_correct / total_count * 100
     total_uni_accuracy = total_uni_correct / total_count * 100
-    print(f"Total accuracy: Variable Res {total_var_accuracy:.2f}%, Uniform Res {total_uni_accuracy:.2f}%")
+    print(f"Total accuracy: Full Res {total_full_accuracy:.2f}%, Variable Res {total_var_accuracy:.2f}%, Uniform Res {total_uni_accuracy:.2f}%")
 
-    correct_var_wrong_uni_dir = os.path.join(output_dir, 'correct_var_wrong_uni')
-    correct_uni_wrong_var_dir = os.path.join(output_dir, 'correct_uni_wrong_var')
+    # Create directories for different correct-wrong permutations
+    permutations = [
+        ('full_right_var_right_uni_right', lambda f, v, u, g: f == g and v == g and u == g),
+        ('full_wrong_var_right_uni_right', lambda f, v, u, g: f != g and v == g and u == g),
+        ('full_right_var_wrong_uni_right', lambda f, v, u, g: f == g and v != g and u == g),
+        ('full_right_var_right_uni_wrong', lambda f, v, u, g: f == g and v == g and u != g),
+        ('full_wrong_var_wrong_uni_right', lambda f, v, u, g: f != g and v != g and u == g),
+        ('full_wrong_var_right_uni_wrong', lambda f, v, u, g: f != g and v == g and u != g),
+        ('full_right_var_wrong_uni_wrong', lambda f, v, u, g: f == g and v != g and u != g),
+        ('full_wrong_var_wrong_uni_wrong', lambda f, v, u, g: f != g and v != g and u != g),
+    ]
 
-    if not os.path.exists(correct_var_wrong_uni_dir):
-        os.mkdir(correct_var_wrong_uni_dir)
-    if not os.path.exists(correct_uni_wrong_var_dir):
-        os.mkdir(correct_uni_wrong_var_dir)
+    for perm in permutations:
+        perm_dir = os.path.join(output_dir, perm[0])
+        if not os.path.exists(perm_dir):
+            os.mkdir(perm_dir)
 
     for item in answer_list:
-        var_pred, uni_pred, gt = item['var_prediction'], item['uni_prediction'], item['gt']
+        full_pred, var_pred, uni_pred, gt = item['full_prediction'], item['var_prediction'], item['uni_prediction'], item['gt']
         question_id = item['question_id']
         output_path = os.path.join(output_dir, f"{question_id}.png")
-        if var_pred == gt and uni_pred != gt:
-            os.system(f"cp {output_path} {correct_var_wrong_uni_dir}")
-        if uni_pred == gt and var_pred != gt:
-            os.system(f"cp {output_path} {correct_uni_wrong_var_dir}")
+        for perm in permutations:
+            if perm[1](full_pred, var_pred, uni_pred, gt):
+                perm_dir = os.path.join(output_dir, perm[0])
+                os.system(f"cp {output_path} {perm_dir}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arg Parser')
@@ -230,4 +261,4 @@ if __name__ == '__main__':
     print(f'evaluating.. {args.model}')
     # The interface for testing MLLMs
     model = build_model(args.model).cuda()
-    run_inference(model, qa_anno, args.output_dir, variable_cc3m_dir, uniform_cc3m_dir)
+    run_inference(model, qa_anno, args.output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir)
