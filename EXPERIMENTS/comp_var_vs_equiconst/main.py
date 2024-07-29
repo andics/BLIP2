@@ -60,7 +60,7 @@ def build_model(model_name):
 
     return model
 
-def visualize_and_save(qa_item, full_img_path, var_img_path, uni_img_path, full_pred, var_pred, uni_pred, output_dir):
+def visualize_and_save(qa_item, full_img_path, var_img_path, uni_img_path, full_pred, var_pred, uni_pred, output_dir, perm):
     question = qa_item['question']
     choices = [qa_item['choice_a'], qa_item['choice_b'], qa_item['choice_c'], qa_item['choice_d']]
     gt = qa_item['answer']
@@ -89,13 +89,32 @@ def visualize_and_save(qa_item, full_img_path, var_img_path, uni_img_path, full_
     axes[2].axis('off')
     axes[2].text(0.5, -0.15, f"Prediction: {uni_pred} ({uni_pred_text})\nGT: {gt} ({gt_text})", ha='center', va='top', transform=axes[2].transAxes, fontsize=12)
 
-    output_path = os.path.join(output_dir, f"{qa_item['question_id']}.png")
+    image_id = qa_item['data_id']
+    question_id = qa_item['question_id']
+    output_path = os.path.join(output_dir, perm, f"{image_id}_{question_id}.png")
     plt.savefig(output_path, bbox_inches='tight')
     plt.close(fig)
 
 def run_inference(model, qa_anno, output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir):
     total_qa_num = len(qa_anno)
     answer_list = []
+
+    permutations = [
+        ('full_right_var_right_uni_right', lambda f, v, u, g: f == g and v == g and u == g),
+        ('full_wrong_var_right_uni_right', lambda f, v, u, g: f != g and v == g and u == g),
+        ('full_right_var_wrong_uni_right', lambda f, v, u, g: f == g and v != g and u == g),
+        ('full_right_var_right_uni_wrong', lambda f, v, u, g: f == g and v == g and u != g),
+        ('full_wrong_var_wrong_uni_right', lambda f, v, u, g: f != g and v != g and u == g),
+        ('full_wrong_var_right_uni_wrong', lambda f, v, u, g: f != g and v == g and u != g),
+        ('full_right_var_wrong_uni_wrong', lambda f, v, u, g: f == g and v != g and u != g),
+        ('full_wrong_var_wrong_uni_wrong', lambda f, v, u, g: f != g and v != g and u != g),
+    ]
+
+    for perm in permutations:
+        perm_dir = os.path.join(output_dir, perm[0])
+        if not os.path.exists(perm_dir):
+            os.makedirs(perm_dir)
+
     if not os.path.exists(os.path.join(output_dir, "results.json")):
         output_f = open(os.path.join(output_dir, "results.json"), "w")
         step = 0
@@ -165,8 +184,10 @@ def run_inference(model, qa_anno, output_dir, full_cc3m_dir, variable_cc3m_dir, 
             # Output prediction record for each question
             output_f.write(json.dumps(answer_record) + "\n")
             
-            # Visualization
-            visualize_and_save(qa_item, full_data_path, var_data_path, uni_data_path, full_pred_id, var_pred_id, uni_pred_id, output_dir)
+            # Determine permutation folder and save visualization
+            for perm in permutations:
+                if perm[1](full_pred_id, var_pred_id, uni_pred_id, gt):
+                    visualize_and_save(qa_item, full_data_path, var_data_path, uni_data_path, full_pred_id, var_pred_id, uni_pred_id, output_dir, perm[0])
             
             step += 1
 
@@ -214,32 +235,6 @@ def run_inference(model, qa_anno, output_dir, full_cc3m_dir, variable_cc3m_dir, 
     total_var_accuracy = total_var_correct / total_count * 100
     total_uni_accuracy = total_uni_correct / total_count * 100
     print(f"Total accuracy: Full Res {total_full_accuracy:.2f}%, Variable Res {total_var_accuracy:.2f}%, Uniform Res {total_uni_accuracy:.2f}%")
-
-    # Create directories for different correct-wrong permutations
-    permutations = [
-        ('full_right_var_right_uni_right', lambda f, v, u, g: f == g and v == g and u == g),
-        ('full_wrong_var_right_uni_right', lambda f, v, u, g: f != g and v == g and u == g),
-        ('full_right_var_wrong_uni_right', lambda f, v, u, g: f == g and v != g and u == g),
-        ('full_right_var_right_uni_wrong', lambda f, v, u, g: f == g and v == g and u != g),
-        ('full_wrong_var_wrong_uni_right', lambda f, v, u, g: f != g and v != g and u == g),
-        ('full_wrong_var_right_uni_wrong', lambda f, v, u, g: f != g and v == g and u != g),
-        ('full_right_var_wrong_uni_wrong', lambda f, v, u, g: f == g and v != g and u != g),
-        ('full_wrong_var_wrong_uni_wrong', lambda f, v, u, g: f != g and v != g and u != g),
-    ]
-
-    for perm in permutations:
-        perm_dir = os.path.join(output_dir, perm[0])
-        if not os.path.exists(perm_dir):
-            os.mkdir(perm_dir)
-
-    for item in answer_list:
-        full_pred, var_pred, uni_pred, gt = item['full_prediction'], item['var_prediction'], item['uni_prediction'], item['gt']
-        question_id = item['question_id']
-        output_path = os.path.join(output_dir, f"{question_id}.png")
-        for perm in permutations:
-            if perm[1](full_pred, var_pred, uni_pred, gt):
-                perm_dir = os.path.join(output_dir, perm[0])
-                os.system(f"cp {output_path} {perm_dir}")
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arg Parser')
