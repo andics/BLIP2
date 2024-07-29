@@ -12,8 +12,8 @@ import matplotlib.image as mpimg
 
 # root directories for the three versions of SEED-Bench dataset
 full_cc3m_dir = "/home/projects/bagon/shared/SEED-Bench/SEED-Bench-image"
-variable_cc3m_dir = "/home/projects/bagon/dannyh/data/seedbench_filt/Variable_10d"
-uniform_cc3m_dir = "/home/projects/bagon/dannyh/data/seedbench_filt/Constant_10d"
+variable_cc3m_dir = "/home/projects/bagon/dannyh/data/seedbench_filt/Variable_27d"
+uniform_cc3m_dir = "/home/projects/bagon/dannyh/data/seedbench_filt/Constant_27d"
 dimension10_dir = "/home/projects/bagon/shared/20bn-something-something-v2/videos"
 dimension11_dir = "/YOUR_PATH_TO/EPIC-KITCHENS/3h91syskeag572hl6tvuovwv4d/videos/test"
 dimension12_dir = "/YOUR_PATH_TO/BreakfastII_15fps_qvga_sync"
@@ -240,9 +240,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Arg Parser')
     parser.add_argument('--model', type=str, default='blip2')
     parser.add_argument('--anno_path', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/SEED-Bench.json')
-    parser.add_argument('--output_dir', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/visualizations')
+    parser.add_argument('--output_dir', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/visualizations_27d')
     parser.add_argument('--task', type=str, default='all')
-    parser.add_argument('--gpu', type=int, default=0, help='GPU device ID')
+    parser.add_argument('--gpu', type=int, default=1, help='GPU device ID')
     args = parser.parse_args()
     
     qa_anno = json.load(open(args.anno_path, 'rb'))

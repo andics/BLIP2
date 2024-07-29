@@ -1,0 +1,40 @@
+evaluating.. blip2 on GPU 1
+WARNING:root:Pytorch pre-release version 2.1.0a0+32f93b1 - assuming intent to test it
+Loading checkpoint shards: 100%|██████████| 2/2 [00:06<00:00,  3.18s/it]
+  0%|          | 0/17990 [00:01<?, ?it/s]
+Traceback (most recent call last):
+  File "/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/main.py", line 261, in <module>
+    run_inference(model, qa_anno, args.output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir)
+  File "/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/main.py", line 165, in run_inference
+    full_losses = model({**data_info, 'data_path': full_data_path})
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/model/blip2_interface.py", line 180, in forward
+    image_embeds = self.model.ln_vision(self.model.visual_encoder(image))  # [B, C, L]
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/lavis/models/eva_vit.py", line 350, in forward
+    x = self.forward_features(x)
+  File "/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/lavis/models/eva_vit.py", line 325, in forward_features
+    x = self.patch_embed(x)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/lavis/models/eva_vit.py", line 203, in forward
+    x = self.proj(x).flatten(2).transpose(1, 2)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1518, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/module.py", line 1527, in _call_impl
+    return forward_call(*args, **kwargs)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/conv.py", line 460, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+  File "/usr/local/lib/python3.10/dist-packages/torch/nn/modules/conv.py", line 456, in _conv_forward
+    return F.conv2d(input, weight, bias, self.stride,
+RuntimeError: Expected all tensors to be on the same device, but found at least two devices, cuda:0 and cuda:1! (when checking argument for argument weight in method wrapper_CUDA__cudnn_convolution)
+
+Process finished with exit code 1
