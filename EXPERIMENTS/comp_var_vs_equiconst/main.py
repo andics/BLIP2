@@ -242,6 +242,7 @@ if __name__ == '__main__':
     parser.add_argument('--anno_path', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/SEED-Bench.json')
     parser.add_argument('--output_dir', type=str, default='/home/projects/bagon/andreyg/Projects/Variable_Resolution_VQA/Programming/BLIP2/EXPERIMENTS/comp_var_vs_equiconst/visualizations')
     parser.add_argument('--task', type=str, default='all')
+    parser.add_argument('--gpu', type=int, default=0, help='GPU device ID')
     args = parser.parse_args()
     
     qa_anno = json.load(open(args.anno_path, 'rb'))
@@ -253,7 +254,8 @@ if __name__ == '__main__':
     if not os.path.exists(args.output_dir):
         os.mkdir(args.output_dir)
 
-    print(f'evaluating.. {args.model}')
+    print(f'evaluating.. {args.model} on GPU {args.gpu}')
     # The interface for testing MLLMs
-    model = build_model(args.model).cuda()
+    device = torch.device(f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu')
+    model = build_model(args.model).to(device)
     run_inference(model, qa_anno, args.output_dir, full_cc3m_dir, variable_cc3m_dir, uniform_cc3m_dir)
